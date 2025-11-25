@@ -1,0 +1,58 @@
+CREATE TABLE learners (
+    student_id   NUMBER PRIMARY KEY,
+    name         VARCHAR2(100),
+    major        VARCHAR2(50),
+    created_at   DATE DEFAULT SYSDATE
+);
+
+
+
+CREATE TABLE access_log_errors (
+    log_id        NUMBER GENERATED ALWAYS AS IDENTITY,
+    username      VARCHAR2(50),
+    action_time   DATE,
+    action_type   VARCHAR2(20),
+    description   VARCHAR2(200)
+);
+
+
+CREATE OR REPLACE TRIGGER trg_block_outside_hours
+BEFORE INSERT OR UPDATE OR DELETE ON learners  -- Changed from students to learners
+DECLARE
+    v_day   VARCHAR2(10) := TO_CHAR(SYSDATE, 'DY', 'NLS_DATE_LANGUAGE=ENGLISH');
+    v_hour  NUMBER := TO_NUMBER(TO_CHAR(SYSDATE, 'HH24'));
+BEGIN
+    IF v_day IN ('SAT', 'SUN') THEN
+        RAISE_APPLICATION_ERROR(-20001,
+            'Access denied: System not available on weekends.');
+    END IF;
+    IF v_hour < 8 OR v_hour >= 17 THEN
+        RAISE_APPLICATION_ERROR(-20002,
+            'Access denied: Only allowed from 08:00 to 17:00.');
+    END IF;
+END;
+/
+
+
+CREATE OR REPLACE TRIGGER trg_log_violations
+AFTER SERVERERROR ON SCHEMA
+DECLARE
+    PRAGMA AUTONOMOUS_TRANSACTION;
+    v_error_code NUMBER := SQLCODE;
+    v_err_msg    VARCHAR2(200) := SUBSTR(SQLERRM, 1, 200);
+BEGIN
+    IF v_error_code IN (-20001, -20002) THEN
+        INSERT INTO access_log_errors(username, action_time, action_type, description)
+        VALUES (
+            SYS_CONTEXT('USERENV', 'SESSION_USER'),
+            SYSDATE,
+            'ACCESS VIOLATION',
+            v_err_msg
+        );
+        COMMIT;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        NULL;
+END;
+/
