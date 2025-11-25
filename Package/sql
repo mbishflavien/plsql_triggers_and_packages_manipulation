@@ -1,0 +1,307 @@
+-- Create employees table
+CREATE TABLE employees (
+    employee_id NUMBER PRIMARY KEY,
+    first_name VARCHAR2(50) NOT NULL,
+    last_name VARCHAR2(50) NOT NULL,
+    email VARCHAR2(100),
+    phone_number VARCHAR2(20),
+    hire_date DATE DEFAULT SYSDATE,
+    job_id VARCHAR2(10),
+    salary NUMBER(10,2) NOT NULL,
+    commission_pct NUMBER(2,2),
+    manager_id NUMBER,
+    department_id NUMBER,
+    last_update_date DATE DEFAULT SYSDATE
+);
+
+-- Create sequence for employee_id
+CREATE SEQUENCE emp_seq START WITH 1 INCREMENT BY 1;
+
+-- Insert sample data
+INSERT INTO employees (employee_id, first_name, last_name, email, salary, department_id, hire_date)
+VALUES (1, 'John', 'Doe', 'john.doe@auca.ac.rw', 500000, 10, SYSDATE);
+
+INSERT INTO employees (employee_id, first_name, last_name, email, salary, department_id, hire_date)
+VALUES (2, 'Jane', 'Smith', 'jane.smith@auca.ac.rw', 750000, 20, SYSDATE);
+
+INSERT INTO employees (employee_id, first_name, last_name, email, salary, department_id, hire_date)
+VALUES (3, 'Alice', 'Uwase', 'alice.uwase@auca.ac.rw', 450000, 30, SYSDATE);
+
+INSERT INTO employees (employee_id, first_name, last_name, email, salary, department_id, hire_date)
+VALUES (4, 'Bob', 'Mugisha', 'bob.mugisha@auca.ac.rw', 600000, 40, SYSDATE);
+
+INSERT INTO employees (employee_id, first_name, last_name, email, salary, department_id, hire_date)
+VALUES (5, 'Grace', 'Mutesi', 'grace.mutesi@auca.ac.rw', 400000, 10, SYSDATE);
+
+INSERT INTO employees (employee_id, first_name, last_name, email, salary, department_id, hire_date)
+VALUES (6, 'David', 'Nkusi', 'david.nkusi@auca.ac.rw', 850000, 50, SYSDATE);
+
+INSERT INTO employees (employee_id, first_name, last_name, email, salary, department_id, hire_date)
+VALUES (7, 'Sarah', 'Kamikazi', 'sarah.kamikazi@auca.ac.rw', 380000, 20, SYSDATE);
+
+INSERT INTO employees (employee_id, first_name, last_name, email, salary, department_id, hire_date)
+VALUES (8, 'Eric', 'Habimana', 'eric.habimana@auca.ac.rw', 950000, 10, SYSDATE);
+
+COMMIT;
+
+
+
+-- Create the package specification
+CREATE OR REPLACE PACKAGE pkg_hr_management AUTHID CURRENT_USER AS
+    FUNCTION calculate_rssb_tax(p_gross_salary NUMBER) RETURN NUMBER;
+    FUNCTION calculate_net_salary(p_employee_id NUMBER) RETURN NUMBER;
+    PROCEDURE execute_hr_operation(
+        p_operation VARCHAR2,
+        p_table_name VARCHAR2 DEFAULT NULL,
+        p_conditions VARCHAR2 DEFAULT NULL
+    );
+    PROCEDURE update_employee_salary(
+        p_employee_id NUMBER,
+        p_new_salary NUMBER
+    );
+    PROCEDURE generate_salary_report;
+END pkg_hr_management;
+/
+
+-- Create the package body with fixes
+CREATE OR REPLACE PACKAGE BODY pkg_hr_management AS
+    
+    /*
+     * USER vs CURRENT_USER:
+     * - USER: Returns the schema that originally authenticated (logged in)
+     * - CURRENT_USER: Returns the schema currently executing (can change with DEFINER rights)
+     * 
+     * AUTHID CURRENT_USER (INVOKER rights): Package executes with caller's privileges
+     * AUTHID DEFINER: Package executes with package owner's privileges
+     */
+    
+    FUNCTION calculate_rssb_tax(p_gross_salary NUMBER) RETURN NUMBER IS
+        v_rssb_rate CONSTANT NUMBER := 0.03;
+    BEGIN
+        IF p_gross_salary IS NULL OR p_gross_salary <= 0 THEN
+            DBMS_OUTPUT.PUT_LINE('Invalid salary amount.');
+            RETURN 0;
+        END IF;
+        RETURN p_gross_salary * v_rssb_rate;
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error calculating RSSB: ' || SQLERRM);
+            RETURN 0;
+    END calculate_rssb_tax;
+    
+    FUNCTION calculate_net_salary(p_employee_id NUMBER) RETURN NUMBER IS
+        v_gross_salary NUMBER;
+        v_rssb_tax NUMBER;
+        v_net_salary NUMBER;
+    BEGIN
+        SELECT salary INTO v_gross_salary
+        FROM employees
+        WHERE employee_id = p_employee_id;
+        
+        v_rssb_tax := calculate_rssb_tax(v_gross_salary);
+        v_net_salary := v_gross_salary - v_rssb_tax;
+        
+        DBMS_OUTPUT.PUT_LINE('========================================');
+        DBMS_OUTPUT.PUT_LINE('Employee ID: ' || p_employee_id);
+        DBMS_OUTPUT.PUT_LINE('Gross Salary: RWF ' || TO_CHAR(v_gross_salary, '999,999,999'));
+        DBMS_OUTPUT.PUT_LINE('RSSB Tax (3%): RWF ' || TO_CHAR(v_rssb_tax, '999,999,999'));
+        DBMS_OUTPUT.PUT_LINE('Net Salary: RWF ' || TO_CHAR(v_net_salary, '999,999,999'));
+        DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+        DBMS_OUTPUT.PUT_LINE('Logged in as (USER): ' || USER);
+        DBMS_OUTPUT.PUT_LINE('Executing as (CURRENT_USER): ' || SYS_CONTEXT('USERENV','CURRENT_USER'));
+        DBMS_OUTPUT.PUT_LINE('========================================');
+        
+        RETURN v_net_salary;
+        
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            DBMS_OUTPUT.PUT_LINE('Error: Employee ID ' || p_employee_id || ' not found.');
+            RETURN NULL;
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
+            RETURN NULL;
+    END calculate_net_salary;
+    
+    PROCEDURE execute_hr_operation(
+        p_operation VARCHAR2,
+        p_table_name VARCHAR2 DEFAULT NULL,
+        p_conditions VARCHAR2 DEFAULT NULL
+    ) IS
+        v_sql VARCHAR2(4000);
+        v_count NUMBER;
+    BEGIN
+        DBMS_OUTPUT.PUT_LINE('========================================');
+        DBMS_OUTPUT.PUT_LINE('Dynamic SQL Operation: ' || p_operation);
+        DBMS_OUTPUT.PUT_LINE('Logged in as (USER): ' || USER);
+        DBMS_OUTPUT.PUT_LINE('Executing as (CURRENT_USER): ' || SYS_CONTEXT('USERENV','CURRENT_USER'));
+        DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+        
+        CASE UPPER(p_operation)
+            WHEN 'COUNT' THEN
+                v_sql := 'SELECT COUNT(*) FROM ' || p_table_name;
+                IF p_conditions IS NOT NULL THEN
+                    v_sql := v_sql || ' WHERE ' || p_conditions;
+                END IF;
+                EXECUTE IMMEDIATE v_sql INTO v_count;
+                DBMS_OUTPUT.PUT_LINE('Count from ' || p_table_name || ': ' || v_count);
+                
+            WHEN 'REPORT' THEN
+                v_sql := 'SELECT employee_id, first_name, last_name, salary FROM ' || 
+                         NVL(p_table_name, 'employees');
+                IF p_conditions IS NOT NULL THEN
+                    v_sql := v_sql || ' WHERE ' || p_conditions;
+                END IF;
+                v_sql := v_sql || ' ORDER BY salary DESC';
+                DBMS_OUTPUT.PUT_LINE('Generated SQL: ');
+                DBMS_OUTPUT.PUT_LINE(v_sql);
+                
+            WHEN 'INCREASE' THEN
+                v_sql := 'UPDATE ' || p_table_name || ' SET salary = salary * 1.1';
+                IF p_conditions IS NOT NULL THEN
+                    v_sql := v_sql || ' WHERE ' || p_conditions;
+                END IF;
+                EXECUTE IMMEDIATE v_sql;
+                DBMS_OUTPUT.PUT_LINE('Salaries increased by 10%. Rows affected: ' || SQL%ROWCOUNT);
+                COMMIT;
+                
+            WHEN 'INSERT' THEN
+                v_sql := 'INSERT INTO ' || p_table_name || 
+                         ' (employee_id, first_name, last_name, salary, hire_date) ' ||
+                         'VALUES (emp_seq.NEXTVAL, ''New'', ''Employee'', 400000, SYSDATE)';
+                EXECUTE IMMEDIATE v_sql;
+                DBMS_OUTPUT.PUT_LINE('New employee inserted. Rows affected: ' || SQL%ROWCOUNT);
+                COMMIT;
+                
+            ELSE
+                DBMS_OUTPUT.PUT_LINE('Invalid operation: ' || p_operation);
+        END CASE;
+        
+        DBMS_OUTPUT.PUT_LINE('========================================');
+        
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error in dynamic operation: ' || SQLERRM);
+            ROLLBACK;
+    END execute_hr_operation;
+    
+    PROCEDURE update_employee_salary(
+        p_employee_id NUMBER,
+        p_new_salary NUMBER
+    ) IS
+    BEGIN
+        IF p_new_salary IS NULL OR p_new_salary <= 0 THEN
+            DBMS_OUTPUT.PUT_LINE('Error: Invalid salary amount.');
+            RETURN;
+        END IF;
+        
+        UPDATE employees
+        SET salary = p_new_salary,
+            last_update_date = SYSDATE
+        WHERE employee_id = p_employee_id;
+        
+        IF SQL%ROWCOUNT > 0 THEN
+            COMMIT;
+            DBMS_OUTPUT.PUT_LINE('Success: Salary updated to RWF ' || 
+                               TO_CHAR(p_new_salary, '999,999,999') || 
+                               ' for employee ' || p_employee_id);
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('Error: Employee ' || p_employee_id || ' not found.');
+        END IF;
+        
+    EXCEPTION
+        WHEN OTHERS THEN
+            ROLLBACK;
+            DBMS_OUTPUT.PUT_LINE('Error updating salary: ' || SQLERRM);
+    END update_employee_salary;
+    
+    PROCEDURE generate_salary_report IS
+        CURSOR emp_cursor IS
+            SELECT employee_id, first_name, last_name, salary
+            FROM employees
+            ORDER BY salary DESC;
+        
+        v_net_salary NUMBER;
+        v_rssb_tax NUMBER;
+        v_total_gross NUMBER := 0;
+        v_total_net NUMBER := 0;
+        v_total_rssb NUMBER := 0;
+        v_count NUMBER := 0;
+        v_emp_id NUMBER;
+        v_fname VARCHAR2(50);
+        v_lname VARCHAR2(50);
+        v_sal NUMBER;
+    BEGIN
+        DBMS_OUTPUT.PUT_LINE('========================================');
+        DBMS_OUTPUT.PUT_LINE('   EMPLOYEE SALARY REPORT');
+        DBMS_OUTPUT.PUT_LINE('========================================');
+        DBMS_OUTPUT.PUT_LINE('Generated by (USER): ' || USER);
+        DBMS_OUTPUT.PUT_LINE('Executed as (CURRENT_USER): ' || SYS_CONTEXT('USERENV','CURRENT_USER'));
+        DBMS_OUTPUT.PUT_LINE('Date: ' || TO_CHAR(SYSDATE, 'DD-MON-YYYY HH24:MI:SS'));
+        DBMS_OUTPUT.PUT_LINE('========================================');
+        DBMS_OUTPUT.PUT_LINE('');
+        
+        FOR emp_rec IN emp_cursor LOOP
+            v_count := v_count + 1;
+            v_emp_id := emp_rec.employee_id;
+            v_fname := emp_rec.first_name;
+            v_lname := emp_rec.last_name;
+            v_sal := emp_rec.salary;
+            
+            v_rssb_tax := calculate_rssb_tax(v_sal);
+            v_net_salary := v_sal - v_rssb_tax;
+            
+            DBMS_OUTPUT.PUT_LINE('Employee #' || v_count);
+            DBMS_OUTPUT.PUT_LINE('ID: ' || v_emp_id || ' | ' || v_fname || ' ' || v_lname);
+            DBMS_OUTPUT.PUT_LINE('Gross Salary: RWF ' || TO_CHAR(v_sal, '999,999,999'));
+            DBMS_OUTPUT.PUT_LINE('RSSB Tax (3%): RWF ' || TO_CHAR(v_rssb_tax, '999,999,999'));
+            DBMS_OUTPUT.PUT_LINE('Net Salary: RWF ' || TO_CHAR(v_net_salary, '999,999,999'));
+            DBMS_OUTPUT.PUT_LINE('----------------------------------------');
+            
+            v_total_gross := v_total_gross + v_sal;
+            v_total_net := v_total_net + v_net_salary;
+            v_total_rssb := v_total_rssb + v_rssb_tax;
+        END LOOP;
+        
+        DBMS_OUTPUT.PUT_LINE('');
+        DBMS_OUTPUT.PUT_LINE('========================================');
+        DBMS_OUTPUT.PUT_LINE('   SUMMARY');
+        DBMS_OUTPUT.PUT_LINE('========================================');
+        DBMS_OUTPUT.PUT_LINE('Total Employees: ' || v_count);
+        DBMS_OUTPUT.PUT_LINE('Total Gross Salaries: RWF ' || TO_CHAR(v_total_gross, '999,999,999'));
+        DBMS_OUTPUT.PUT_LINE('Total RSSB Deductions: RWF ' || TO_CHAR(v_total_rssb, '999,999,999'));
+        DBMS_OUTPUT.PUT_LINE('Total Net Salaries: RWF ' || TO_CHAR(v_total_net, '999,999,999'));
+        DBMS_OUTPUT.PUT_LINE('========================================');
+        
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Error generating report: ' || SQLERRM);
+    END generate_salary_report;
+    
+END pkg_hr_management;
+/
+
+SET SERVEROUTPUT ON SIZE UNLIMITED;
+
+-- Test 1
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('TEST 1: Calculate Net Salary');
+    DBMS_OUTPUT.PUT_LINE('');
+    DECLARE
+        v_net NUMBER;
+    BEGIN
+        v_net := pkg_hr_management.calculate_net_salary(1);
+    END;
+END;
+/
+
+-- Test 2
+BEGIN
+    pkg_hr_management.execute_hr_operation('COUNT', 'employees', 'salary > 500000');
+END;
+/
+
+-- Test 3
+BEGIN
+    pkg_hr_management.generate_salary_report;
+END;
+/
