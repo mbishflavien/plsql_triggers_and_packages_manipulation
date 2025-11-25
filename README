@@ -1,48 +1,30 @@
-PL/SQL Triggers and Packages Manipulation
-Repository: plsql_triggers_and_packages_manipulation
+# PL/SQL Triggers and Packages Manipulation
+## Group Members
+### MBISHIBISHI Flavien 27857
+###
+###
+###
+# 1. What This Repository Contains
 
-This project contains all the work I did while practicing PL/SQL triggers and package creation in Oracle. It includes different scripts for creating triggers, packages, and testing how they behave when data is inserted, updated, or deleted. The goal of the repository is to show practical understanding of how triggers and packages work in a real database environment.
+This repository includes all the PL/SQL work done for practicing and demonstrating triggers, packages, and general database logic in Oracle. It covers system access rules, dynamic SQL, salary calculations, and security context.
 
-Content
-Triggers folder: contains all trigger scripts (before insert, after update, validation triggers, etc.)
-Package folder: contains package specifications and package bodies
-Screenshots folder: optional screenshots showing the execution or results
+## 1. What the Questions Were About
 
-## What the project covers
+### Question 1 — AUCA System Access Policy (Triggers)
+The task required enforcing access rules for the AUCA system:
+- Users **cannot access or modify data on Saturday and Sunday**.
+- Users **can only access the system Monday–Friday, from 8:00 AM to 5:00 PM**.
+- Any attempt outside allowed days or hours should be **blocked**.
+- All blocked attempts should be **logged automatically** for auditing purposes.
 
--Basic and intermediate PL/SQL triggers
+**Goal:** Demonstrate database triggers that enforce real-time security and logging.
 
--How triggers enforce rules or automate tasks
 
--How packages group related procedures and functions
+### Question 2 — HR Employee Management System (PL/SQL Package)
+The task required designing a PL/SQL package to manage employees’ salaries:
+- **Function** to calculate RSSB tax (5%) and return net salary.
+- **Dynamic procedure** using `EXECUTE IMMEDIATE` to perform operations (e.g., create or update tables).
+- Demonstrate **USER / CURRENT_USER** and **DEFINER / INVOKER rights**.
+- Provide **sample calls** to show function and procedure outputs.
 
--How triggers can call procedures from packages
-
--Error handling, validations, and logic separation
-
-**How to run the scripts
-
-Connect to Oracle SQL Developer or SQL*Plus using the correct user.
-
-Run the table creation scripts if needed.
-
-Run the package specification and body.
-
-Run the trigger scripts.
-
-Test by inserting, updating, or deleting data.
-
-Check the results or logs depending on the type of trigger.
-
-Notes
-
-Some scripts depend on each other, so run them in order.
-
-Make sure the user has the right permissions to create triggers and packages.
-
-If the trigger does not fire, check if there are conditions preventing it.
-
-You can edit or extend the scripts based on your own logic.
-
-Purpose
-The repository mainly serves as practice material for PL/SQL. It shows how triggers and packages interact inside an Oracle database and helps build experience for DBMS courses or future backend/database work.
+**Goal:** Demonstrate PL/SQL package development, dynamic SQL, and database security context.
