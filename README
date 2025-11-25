@@ -1,30 +1,55 @@
 # PL/SQL Triggers and Packages Manipulation
-## Group Members
-### MBISHIBISHI Flavien 27857
+##Group members:
+###MBISHIBISHI Flavien
 ###
 ###
 ###
-# 1. What This Repository Contains
+1. What This Repository Contains
 
-This repository includes all the PL/SQL work done for practicing and demonstrating triggers, packages, and general database logic in Oracle. It covers system access rules, dynamic SQL, salary calculations, and security context.
+## This repository includes all the PL/SQL work done for practicing and demonstrating triggers, packages, and general database logic in Oracle. It covers system access rules, dynamic SQL, salary calculations, and security context.
 
-## 1. What the Questions Were About
+2. Triggers — System Access Control
+What the Trigger Work Was About:
+-Users cannot access or modify data on Saturday and Sunday
+-Access is only allowed Monday to Friday, from 8:00 AM to 5:00 PM
+-Any operation attempted outside allowed hours or days must be blocked
+-Every blocked attempt should be logged automatically
 
-### Question 1 — AUCA System Access Policy (Triggers)
-The task required enforcing access rules for the AUCA system:
-- Users **cannot access or modify data on Saturday and Sunday**.
-- Users **can only access the system Monday–Friday, from 8:00 AM to 5:00 PM**.
-- Any attempt outside allowed days or hours should be **blocked**.
-- All blocked attempts should be **logged automatically** for auditing purposes.
+**Objective
 
-**Goal:** Demonstrate database triggers that enforce real-time security and logging.
+To demonstrate how triggers can enforce real-time security rules and handle automatic auditing in the database.
 
+3. Packages — Salary and Dynamic SQL Management
+What the Package Work Was About
 
-### Question 2 — HR Employee Management System (PL/SQL Package)
-The task required designing a PL/SQL package to manage employees’ salaries:
-- **Function** to calculate RSSB tax (5%) and return net salary.
-- **Dynamic procedure** using `EXECUTE IMMEDIATE` to perform operations (e.g., create or update tables).
-- Demonstrate **USER / CURRENT_USER** and **DEFINER / INVOKER rights**.
-- Provide **sample calls** to show function and procedure outputs.
+-A function to calculate RSSB tax (5%) and return the net salary
+-A procedure using EXECUTE IMMEDIATE to run dynamic SQL (create/update tables, etc.)
+-Demonstrations of USER, CURRENT_USER, DEFINER RIGHTS, and INVOKER RIGHTS
+-Example calls showing how the function and procedure behave
 
-**Goal:** Demonstrate PL/SQL package development, dynamic SQL, and database security context.
+**Objective
+
+To show how to build PL/SQL packages, use dynamic SQL properly, and understand Oracle’s security context mechanisms.
+
+4. Repository Structure
+Triggers/ — Access control trigger scripts
+Packages/ — Package specification and body
+Screenshots/ — Execution proofs and logs
+README.md — Documentation
+
+5. How to Test the Scripts
+-Connect to Oracle SQL Developer or SQL*Plus
+-Run required table creation scripts
+-Run the package specification
+-Run the package body
+-Run the trigger scripts
+-Test using INSERT / UPDATE / DELETE
+-Verify blocked actions and salary outputs
+
+6. Purpose of This Work
+
+This project demonstrates:
+-How triggers enforce business and security rules
+-How packages organize functions and procedures
+-How dynamic SQL works in Oracle
+-How security context affects PL/SQL execution
