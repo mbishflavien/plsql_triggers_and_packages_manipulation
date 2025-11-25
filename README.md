@@ -1,7 +1,7 @@
 # PL/SQL Triggers and Packages Manipulation
 ## Group members:
 ### 1. MBISHIBISHI Flavien 27857
-### 
+### 2. Uwamwezi Denyse  27976
 ### 
 ### 
 
